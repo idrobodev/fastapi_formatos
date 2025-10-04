@@ -214,6 +214,48 @@ async def download_file(file_id: int):
     )
 
 
+@app.get("/api/files/list")
+async def list_files(path: str = ""):
+    """
+    Lista archivos y carpetas en una ruta específica.
+
+    - **path**: Ruta a listar (opcional, default="")
+    """
+    try:
+        # Validar ruta
+        if not validate_path(path):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ruta inválida"
+            )
+
+        # Filtrar archivos por ruta
+        filtered_files = []
+        for file_data in files_db.values():
+            if file_data['ruta'] == path:
+                filtered_files.append(file_data)
+
+        # Filtrar carpetas por ruta padre
+        filtered_folders = []
+        for folder_data in folders_db.values():
+            if folder_data['ruta'] == path:
+                filtered_folders.append(folder_data)
+
+        return {
+            "files": filtered_files,
+            "folders": filtered_folders,
+            "path": path
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al listar archivos: {str(e)}"
+        )
+
+
 @app.delete("/api/files/{file_id}")
 async def delete_file(file_id: int):
     """

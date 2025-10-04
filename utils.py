@@ -14,11 +14,19 @@ from pathlib import Path
 def ensure_storage_directory() -> None:
     """
     Asegura que el directorio de almacenamiento storage/formatos/ exista.
-    Crea el directorio si no existe.
+    Crea el directorio si no existe y crea las carpetas por defecto.
     """
     storage_path = Path("storage/formatos")
     storage_path.mkdir(parents=True, exist_ok=True)
+
+    # Crear carpetas por defecto
+    default_folders = ["Documentos", "Imágenes"]
+    for folder_name in default_folders:
+        folder_path = storage_path / folder_name
+        folder_path.mkdir(exist_ok=True)
+
     print(f"✅ Directorio de almacenamiento verificado: {storage_path.absolute()}")
+    print(f"✅ Carpetas por defecto creadas: {', '.join(default_folders)}")
 
 
 # ============================================================================
