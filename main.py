@@ -57,6 +57,13 @@ app.add_middleware(
 @app.get("/api/health")
 async def health_check():
     """Endpoint de health check para verificar que el servidor está funcionando"""
+    return {
+        "status": "ok",
+        "message": "Formatos API is running",
+        "service": "Formatos API - Corporación Todo por un Alma",
+        "version": "1.0.0"
+    }
+
 # ============================================================================
 # Endpoints de Archivos
 # ============================================================================
@@ -194,7 +201,10 @@ async def download_file(file_id: int):
 
     # Verificar que el archivo físico exista
     if not file_path.exists():
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="file not found")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Archivo físico no encontrado en el servidor"
+        )
 
     # Retornar archivo con headers apropiados
     return FileResponse(
@@ -432,55 +442,3 @@ async def delete_folder(folder_id: int):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al eliminar carpeta: {str(e)}"
         )
-
-        return folder_record
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al crear carpeta: {str(e)}"
-        )
-
-    # Eliminar registro de base de datos
-    del files_db[file_id]
-
-    # Preparar mensaje de respuesta
-    message = "Archivo eliminado exitosamente"
-    if warning_message:
-        message += f". Advertencia: {warning_message}"
-
-    return {
-        "message": message,
-        "id": file_id,
-        "physical_file_deleted": physical_file_deleted
-    }
-            detail="Archivo físico no encontrado en el servidor"
-        )
-
-    # Retornar archivo con headers apropiados
-    return FileResponse(
-        path=file_path,
-        filename=file_record['nombre'],
-        media_type=file_record['tipo']
-    )
-            message="Archivo subido exitosamente"
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Limpiar archivo temporal en caso de error
-        temp_file_path = f"/tmp/{file.filename}"
-        Path(temp_file_path).unlink(missing_ok=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al subir archivo: {str(e)}"
-        )
-    return {
-        "status": "ok",
-        "message": "Formatos API is running",
-        "service": "Formatos API - Corporación Todo por un Alma",
-        "version": "1.0.0"
-    }
