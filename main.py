@@ -7,9 +7,9 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils import ensure_storage_directory, format_datetime
-from database import initialize_database, files_db, counters
+from database import initialize_database, files_db, counters, folders_db
 from models import FileUploadResponse, FolderCreate, FolderRename
-from services import validate_path, validate_file_type, sanitize_filename, get_unique_filename, get_mime_type
+from services import validate_path, validate_file_type, sanitize_filename, get_unique_filename, get_mime_type, delete_folder_recursive
 
 # ============================================================================
 # Configuración de lifespan para inicialización
@@ -156,6 +156,20 @@ async def upload_file(
             tamaño=file_size,
             tipo=mime_type,
             createdAt=now_iso,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Limpiar archivo temporal en caso de error
+        temp_file_path = f"/tmp/{file.filename}"
+        Path(temp_file_path).unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al subir archivo: {str(e)}"
+        )
+
+
 @app.get("/api/files/download/{file_id}")
 async def download_file(file_id: int):
     """
@@ -180,8 +194,16 @@ async def download_file(file_id: int):
 
     # Verificar que el archivo físico exista
     if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="file not found")
+
+    # Retornar archivo con headers apropiados
+    return FileResponse(
+        path=file_path,
+        filename=file_record['nombre'],
+        media_type=file_record['tipo']
+    )
+
+
 @app.delete("/api/files/{file_id}")
 async def delete_file(file_id: int):
     """
@@ -217,6 +239,22 @@ async def delete_file(file_id: int):
     except Exception as e:
         physical_file_deleted = False
         warning_message = f"Error al eliminar archivo físico: {str(e)}"
+
+    # Eliminar registro de base de datos
+    del files_db[file_id]
+
+    # Preparar mensaje de respuesta
+    message = "Archivo eliminado exitosamente"
+    if warning_message:
+        message += f". Advertencia: {warning_message}"
+
+    return {
+        "message": message,
+        "id": file_id,
+        "physical_file_deleted": physical_file_deleted
+    }
+
+
 # ============================================================================
 # Endpoints de Carpetas
 # ============================================================================
@@ -265,6 +303,18 @@ async def create_folder(folder: FolderCreate):
         }
 
         folders_db[new_id] = folder_record
+
+        return folder_record
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al crear carpeta: {str(e)}"
+        )
+
+
 @app.put("/api/folders/rename")
 async def rename_folder(folder_rename: FolderRename):
     """
