@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils import ensure_storage_directory, format_datetime
 from database import initialize_database, files_db, counters, folders_db
 from models import FileUploadResponse, FolderCreate, FolderRename
-from services import validate_path, validate_file_type, sanitize_filename, get_unique_filename, get_mime_type, delete_folder_recursive
+from services import validate_path, validate_file_type, sanitize_filename, get_unique_filename, get_mime_type, delete_folder_recursive, get_file_category, ensure_category_folder
 
 # ============================================================================
 # Configuración de lifespan para inicialización
@@ -69,24 +69,14 @@ async def health_check():
 # ============================================================================
 
 @app.post("/api/files/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
-async def upload_file(
-    file: UploadFile = File(...),
-    path: str = Form(default="")
-):
+async def upload_file(file: UploadFile = File(...)):
     """
     Sube un archivo al sistema de gestión de formatos.
+    Los archivos se organizan automáticamente en carpetas por tipo.
 
     - **file**: Archivo a subir
-    - **path**: Ruta de destino (opcional, default="")
     """
     try:
-        # Validar ruta
-        if not validate_path(path):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ruta inválida"
-            )
-
         # Validar tamaño del archivo (100MB máximo)
         MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
         file_content = await file.read()
@@ -111,19 +101,19 @@ async def upload_file(
                 detail="Tipo de archivo no permitido"
             )
 
+        # Determinar categoría del archivo y asegurar que la carpeta existe
+        category = get_file_category(file.filename)
+        category_folder = ensure_category_folder(category)
+
         # Sanitizar nombre de archivo
         sanitized_name = sanitize_filename(file.filename)
 
-        # Generar nombre único
-        unique_name = get_unique_filename(path, sanitized_name)
+        # Generar nombre único en la carpeta de categoría
+        unique_name = get_unique_filename(category_folder, sanitized_name)
 
         # Crear directorio de destino
         storage_path = Path("storage/formatos")
-        if path:
-            dest_dir = storage_path / path.lstrip('/')
-        else:
-            dest_dir = storage_path
-
+        dest_dir = storage_path / category_folder
         dest_dir.mkdir(parents=True, exist_ok=True)
 
         # Guardar archivo
@@ -146,9 +136,10 @@ async def upload_file(
         file_record = {
             "id": new_id,
             "nombre": unique_name,
-            "ruta": path,
+            "ruta": category_folder,
             "tamaño": file_size,
             "tipo": mime_type,
+            "categoria": category,
             "createdAt": now_iso,
             "updatedAt": now_iso
         }
@@ -159,7 +150,7 @@ async def upload_file(
         return FileUploadResponse(
             id=new_id,
             nombre=unique_name,
-            ruta=path,
+            ruta=category_folder,
             tamaño=file_size,
             tipo=mime_type,
             createdAt=now_iso,

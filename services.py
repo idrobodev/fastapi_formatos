@@ -168,6 +168,113 @@ def get_mime_type(filename: str) -> str:
 
 
 # ============================================================================
+# Funciones de Categorización de Archivos
+# ============================================================================
+
+def get_file_category(filename: str) -> str:
+    """
+    Determina la categoría de un archivo basado en su extensión.
+
+    Args:
+        filename: Nombre del archivo
+
+    Returns:
+        Categoría del archivo ('document', 'image', 'video', 'audio', 'archive', 'code', 'other')
+    """
+    if not filename:
+        return 'other'
+
+    extension = Path(filename).suffix.lower().lstrip('.')
+
+    # Documentos
+    document_extensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt']
+    if extension in document_extensions:
+        return 'document'
+
+    # Imágenes
+    image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp']
+    if extension in image_extensions:
+        return 'image'
+
+    # Videos
+    video_extensions = ['mp4', 'avi', 'mov', 'wmv']
+    if extension in video_extensions:
+        return 'video'
+
+    # Audio
+    audio_extensions = ['mp3', 'wav', 'flac']
+    if extension in audio_extensions:
+        return 'audio'
+
+    # Archivos comprimidos
+    archive_extensions = ['zip', 'rar', '7z']
+    if extension in archive_extensions:
+        return 'archive'
+
+    # Código
+    code_extensions = ['js', 'html', 'css', 'json']
+    if extension in code_extensions:
+        return 'code'
+
+    return 'other'
+
+
+def ensure_category_folder(category: str) -> str:
+    """
+    Asegura que exista la carpeta de categoría y la crea si no existe.
+
+    Args:
+        category: Categoría del archivo
+
+    Returns:
+        Nombre de la carpeta de categoría
+    """
+    # Mapear categorías a nombres de carpeta en español
+    category_names = {
+        'document': 'Documentos',
+        'image': 'Imágenes',
+        'video': 'Videos',
+        'audio': 'Audio',
+        'archive': 'Archivos',
+        'code': 'Código',
+        'other': 'Otros'
+    }
+
+    folder_name = category_names.get(category, 'Otros')
+
+    # Verificar si la carpeta ya existe en la base de datos
+    for folder_data in folders_db.values():
+        if folder_data['nombre'] == folder_name and folder_data['ruta'] == '':
+            return folder_name
+
+    # Crear la carpeta si no existe
+    from database import counters
+    new_id = counters["folders"] + 1
+    counters["folders"] = new_id
+
+    from utils import format_datetime
+    from datetime import datetime
+
+    now = datetime.utcnow()
+    now_iso = format_datetime(now)
+
+    folder_record = {
+        "id": new_id,
+        "nombre": folder_name,
+        "ruta": "",
+        "createdAt": now_iso
+    }
+
+    folders_db[new_id] = folder_record
+
+    # Crear directorio físico
+    storage_path = Path("storage/formatos") / folder_name
+    storage_path.mkdir(parents=True, exist_ok=True)
+
+    return folder_name
+
+
+# ============================================================================
 # Funciones de Lógica de Negocio
 # ============================================================================
 
