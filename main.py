@@ -54,7 +54,7 @@ app.add_middleware(
 # Endpoints de Health Check
 # ============================================================================
 
-@app.get("/api/health")
+@app.get("/health")
 async def health_check():
     """Endpoint de health check para verificar que el servidor está funcionando"""
     return {
