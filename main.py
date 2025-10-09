@@ -68,7 +68,7 @@ async def health_check():
 # Endpoints de Archivos
 # ============================================================================
 
-@app.post("/api/files/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
+@app.post("/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_file(file: UploadFile = File(...)):
     """
     Sube un archivo al sistema de gestión de formatos.
@@ -168,7 +168,7 @@ async def upload_file(file: UploadFile = File(...)):
         )
 
 
-@app.get("/api/files/download/{file_id}")
+@app.get("/download/{file_id}")
 async def download_file(file_id: int):
     """
     Descarga un archivo por su ID.
@@ -205,7 +205,7 @@ async def download_file(file_id: int):
     )
 
 
-@app.get("/api/files/list")
+@app.get("/list")
 async def list_files(path: str = ""):
     """
     Lista archivos y carpetas en una ruta específica.
@@ -247,7 +247,7 @@ async def list_files(path: str = ""):
         )
 
 
-@app.delete("/api/files/{file_id}")
+@app.delete("/{file_id}")
 async def delete_file(file_id: int):
     """
     Elimina un archivo por su ID.
@@ -302,7 +302,7 @@ async def delete_file(file_id: int):
 # Endpoints de Carpetas
 # ============================================================================
 
-@app.post("/api/folders/create", response_model=dict, status_code=status.HTTP_201_CREATED)
+@app.post("/folders/create", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_folder(folder: FolderCreate):
     """
     Crea una nueva carpeta.
@@ -358,7 +358,7 @@ async def create_folder(folder: FolderCreate):
         )
 
 
-@app.put("/api/folders/rename")
+@app.put("/folders/rename")
 async def rename_folder(folder_rename: FolderRename):
     """
     Renombra una carpeta existente.
@@ -439,7 +439,7 @@ async def rename_folder(folder_rename: FolderRename):
         )
 
 
-@app.delete("/api/folders/{folder_id}")
+@app.delete("/folders/{folder_id}")
 async def delete_folder(folder_id: int):
     """
     Elimina una carpeta y todo su contenido recursivamente.
