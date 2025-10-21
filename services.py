@@ -164,7 +164,10 @@ def get_mime_type(filename: str) -> str:
         Tipo MIME detectado o 'application/octet-stream' si no se detecta
     """
     mime_type, _ = mimetypes.guess_type(filename)
-    return mime_type or 'application/octet-stream'
+    # Ensure we never return "0" or invalid MIME types
+    if not mime_type or mime_type == "0":
+        return 'application/octet-stream'
+    return mime_type
 
 
 # ============================================================================
