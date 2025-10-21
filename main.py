@@ -54,6 +54,17 @@ app.add_middleware(
 # Endpoints de Health Check
 # ============================================================================
 
+@app.get("/")
+async def root():
+    """Endpoint raíz que muestra información básica de la API"""
+    return {
+        "message": "Formatos API - Corporación Todo por un Alma",
+        "status": "running",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
 @app.get("/health")
 async def health_check():
     """Endpoint de health check para verificar que el servidor está funcionando"""
