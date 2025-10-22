@@ -39,6 +39,20 @@ app = FastAPI(
 )
 
 # ============================================================================
+# Router para API endpoints
+# ============================================================================
+
+from fastapi import APIRouter
+api_router = APIRouter(prefix="/api")
+
+# ============================================================================
+# Incluir el router en la aplicación
+# ============================================================================
+
+# Incluir el router en la aplicación
+app.include_router(api_router)
+
+# ============================================================================
 # Configuración de CORS
 # ============================================================================
 
@@ -76,10 +90,10 @@ async def health_check():
     }
 
 # ============================================================================
-# Endpoints de Archivos
+# Endpoints de Archivos (con /api prefix)
 # ============================================================================
 
-@app.post("/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
+@api_router.post("/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_file(file: UploadFile = File(...)):
     """
     Sube un archivo al sistema de gestión de formatos.
@@ -179,7 +193,7 @@ async def upload_file(file: UploadFile = File(...)):
         )
 
 
-@app.get("/download/{file_id}")
+@api_router.get("/download/{file_id}")
 async def download_file(file_id: int):
     """
     Descarga un archivo por su ID.
@@ -216,7 +230,7 @@ async def download_file(file_id: int):
     )
 
 
-@app.get("/list")
+@api_router.get("/list")
 async def list_files(path: str = ""):
     """
     Lista archivos y carpetas en una ruta específica.
@@ -258,7 +272,7 @@ async def list_files(path: str = ""):
         )
 
 
-@app.delete("/{file_id}")
+@api_router.delete("/{file_id}")
 async def delete_file(file_id: int):
     """
     Elimina un archivo por su ID.
@@ -310,10 +324,10 @@ async def delete_file(file_id: int):
 
 
 # ============================================================================
-# Endpoints de Carpetas
+# Endpoints de Carpetas (con /api prefix)
 # ============================================================================
 
-@app.post("/folders/create", response_model=dict, status_code=status.HTTP_201_CREATED)
+@api_router.post("/folders/create", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_folder(folder: FolderCreate):
     """
     Crea una nueva carpeta.
@@ -369,7 +383,7 @@ async def create_folder(folder: FolderCreate):
         )
 
 
-@app.put("/folders/rename")
+@api_router.put("/folders/rename")
 async def rename_folder(folder_rename: FolderRename):
     """
     Renombra una carpeta existente.
@@ -450,7 +464,7 @@ async def rename_folder(folder_rename: FolderRename):
         )
 
 
-@app.delete("/folders/{folder_id}")
+@api_router.delete("/folders/{folder_id}")
 async def delete_folder(folder_id: int):
     """
     Elimina una carpeta y todo su contenido recursivamente.
